@@ -411,22 +411,22 @@
 
         function compute_base_loan_amount(home_value, down_payment_value, down_payment_pct) {
           const hv = clampNonNegative(home_value);
-          const dpValueInput = clampNonNegative(down_payment_value);
+          const dpValueInput = toNumber(down_payment_value);
           const dpPctInput = clampNonNegative(down_payment_pct);
 
-          let downPaymentValue = 0;
+          let loan_amount_base;
           if (dpValueInput > 0) {
-            downPaymentValue = Math.min(dpValueInput, hv);
-          } else if (dpPctInput > 0) {
-            downPaymentValue = Math.min(hv * dpPctInput, hv);
+            loan_amount_base = hv - dpValueInput;
+          } else {
+            loan_amount_base = hv * (1 - dpPctInput);
           }
 
-          const loan_amount_base = clampNonNegative(hv - downPaymentValue);
-          const down_payment_pct_normalized = hv > 0 ? downPaymentValue / hv : 0;
+          const down_payment_value_normalized = dpValueInput > 0 ? dpValueInput : hv * dpPctInput;
+          const down_payment_pct_normalized = hv > 0 ? down_payment_value_normalized / hv : 0;
 
           return {
-            loan_amount_base,
-            down_payment_value: downPaymentValue,
+            loan_amount_base: clampNonNegative(loan_amount_base),
+            down_payment_value: down_payment_value_normalized,
             down_payment_pct: down_payment_pct_normalized,
           };
         }
@@ -475,16 +475,15 @@
           const yearlyRate = clampNonNegative(rate_apr);
           const i_m = yearlyRate / MONTHS_IN_YEAR;
 
-          if (i_m === 0) {
+          if (i_m > 0) {
+            const denominator = 1 - Math.pow(1 + i_m, -n);
+            if (denominator === 0) {
+              return principal / n;
+            }
+            return principal * i_m / denominator;
+          } else {
             return principal / n;
           }
-
-          const factor = Math.pow(1 + i_m, n);
-          if (!Number.isFinite(factor) || Math.abs(factor - 1) < ZERO_TOLERANCE) {
-            return principal / n;
-          }
-
-          return (principal * i_m * factor) / (factor - 1);
         }
 
         function monthly_mi_conventional(principal_t, home_value, pmi_pct) {

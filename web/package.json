@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "esbuild src/component.tsx --bundle --format=esm --outfile=../assets/mortgage-calculator.js"
+    "build": "esbuild src/main.tsx --bundle --format=esm --outfile=../assets/mortgage-calculator.js"
   },
   "dependencies": {
     "react": "^18.2.0",

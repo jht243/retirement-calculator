@@ -94,20 +94,37 @@
       }
 
       .field-group {
-        padding: 10px 0;
+        padding: 16px 0 12px;
       }
 
       .field-group + .field-group {
-        border-top: 1px solid rgba(148, 163, 184, 0.12);
+        border-top: 1px solid rgba(148, 163, 184, 0.08);
+        padding-top: 20px;
       }
 
       .field-group-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
         font-size: 10px;
         font-weight: 600;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: rgba(226, 232, 240, 0.52);
-        margin: 0 0 6px;
+        color: rgba(148, 163, 184, 0.7);
+        margin: 0 0 14px;
+      }
+
+      .field-group-label .icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.45), rgba(99, 102, 241, 0.35));
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(15, 23, 42, 0.92);
+        font-size: 12px;
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
       }
 
       .section-block {
@@ -144,7 +161,12 @@
 
       .grid.duo-columns {
         grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        gap: 12px 16px;
+        gap: 16px 18px;
+      }
+
+      .grid.trio-columns {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px 18px;
       }
 
       .is-hidden {
@@ -154,11 +176,20 @@
       label {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
         font-size: 10px;
         color: rgba(226, 232, 240, 0.68);
         text-transform: uppercase;
         letter-spacing: 0.08em;
+      }
+
+      label .field-helper {
+        font-size: 11px;
+        color: rgba(148, 163, 184, 0.6);
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 400;
+        margin-top: -2px;
       }
 
       label.has-error input,
@@ -224,11 +255,22 @@
       .checkbox-row {
         display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 8px;
-        border-radius: 8px;
-        border: 1px solid rgba(148, 163, 184, 0.18);
-        background: rgba(11, 18, 32, 0.28);
+        gap: 8px;
+        padding: 0;
+        margin-top: 10px;
+      }
+
+      .checkbox-row input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+      }
+
+      .checkbox-row span {
+        font-size: 11px;
+        color: rgba(148, 163, 184, 0.75);
+        text-transform: none;
+        letter-spacing: 0;
       }
 
       .result-stack {
@@ -598,14 +640,16 @@
                   <summary class="section-summary">Property, mortgage, and fees</summary>
                   <div class="collapsible-content">
                     <div class="field-group">
-                      <p class="field-group-label">My information</p>
+                      <p class="field-group-label"><span class="icon">🏠</span> My information</p>
                       <div class="grid duo-columns">
                         <label>
                           ZIP code
+                          <span class="field-helper">Location for tax estimates</span>
                           <input type="text" id="zip_code" inputmode="numeric" pattern="\d*" maxlength="9" placeholder="e.g. 94043" />
                         </label>
                         <label>
                           Credit score
+                          <span class="field-helper">Affects interest rate</span>
                           <select id="credit_score">
                             <option value="">Select</option>
                             <option value="760+">760+</option>
@@ -620,64 +664,74 @@
                     </div>
 
                     <div class="field-group">
-                      <p class="field-group-label">Property information</p>
-                      <div class="grid duo-columns">
+                      <p class="field-group-label"><span class="icon">📍</span> Property information</p>
+                      <div class="grid trio-columns">
                         <label class="percent-field">
-                          Property tax (% of value)
+                          Property tax
+                          <span class="field-helper">Annual % of assessed value</span>
                           <input type="number" id="property_tax_input" min="0" step="0.01" />
                         </label>
                         <label>
-                          Homeowners insurance ($/yr)
+                          Homeowners insurance
+                          <span class="field-helper">Annual cost in dollars</span>
                           <input type="number" id="homeowners_insurance_yearly" min="0" step="50" />
                         </label>
                         <label>
-                          HOA dues ($/mo)
+                          HOA dues
+                          <span class="field-helper">Monthly cost in dollars</span>
                           <input type="number" id="hoa_monthly" min="0" step="10" />
                         </label>
                       </div>
                     </div>
 
                     <div class="field-group">
-                      <p class="field-group-label">Mortgage insurance & fees</p>
-                      <div class="grid duo-columns">
+                      <p class="field-group-label"><span class="icon">💳</span> Mortgage insurance & fees</p>
+                      <div class="grid trio-columns">
                         <label class="percent-field">
-                          PMI (% annual, conventional)
+                          PMI
+                          <span class="field-helper">Annual % (conventional only)</span>
                           <input type="number" id="pmi_pct" min="0" step="0.01" />
                         </label>
                         <label class="percent-field" data-mi-only>
-                          Annual MI fee (% of balance)
+                          Annual MI fee
+                          <span class="field-helper">% of remaining balance</span>
                           <input type="number" id="annual_mi_pct" min="0" step="0.01" />
                         </label>
                         <label class="percent-field">
-                          Upfront fee (% base loan)
+                          Upfront fee
+                          <span class="field-helper">% of base loan amount</span>
                           <input type="number" id="upfront_fee_pct" min="0" step="0.01" />
-                          <div class="checkbox-row" style="margin-top: 8px;">
+                          <div class="checkbox-row">
                             <input type="checkbox" id="finance_upfront_fee" />
-                            <span style="font-size: 12px; color: rgba(226, 232, 240, 0.72);">Add fee to principal balance</span>
+                            <span>Add fee to principal balance</span>
                           </div>
                         </label>
                       </div>
                     </div>
 
                     <div class="field-group">
-                      <p class="field-group-label">Advanced options</p>
+                      <p class="field-group-label"><span class="icon">⚙️</span> Advanced options</p>
                       <div class="grid duo-columns">
                         <label>
                           First payment month
+                          <span class="field-helper">1-12 for Jan-Dec</span>
                           <input type="number" id="start_month" min="1" max="12" step="1" />
                           <span class="field-message" data-field-error="start_month"></span>
                         </label>
                         <label>
                           First payment year
+                          <span class="field-helper">Year of first payment</span>
                           <input type="number" id="start_year" min="2024" step="1" />
                           <span class="field-message" data-field-error="start_year"></span>
                         </label>
                         <label>
-                          Extra payment ($/mo)
+                          Extra payment
+                          <span class="field-helper">Additional monthly principal</span>
                           <input type="number" id="extra_principal_monthly" min="0" step="50" />
                         </label>
                         <label>
-                          Extra starts at month index
+                          Extra starts at month
+                          <span class="field-helper">Month index when extra begins</span>
                           <input type="number" id="extra_start_month_index" min="0" step="1" />
                         </label>
                       </div>

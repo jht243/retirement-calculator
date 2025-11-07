@@ -613,13 +613,16 @@
         position: fixed;
         inset: 0;
         display: none;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
+        padding-top: clamp(24px, 8vh, 72px);
+        overflow-y: auto;
         background: rgba(2, 6, 23, 0.66);
         z-index: 9999;
       }
       .modal-dialog {
-        width: min(440px, 90vw);
+        width: min(420px, 92vw);
+        box-sizing: border-box;
         border-radius: 12px;
         border: 1px solid rgba(71, 85, 105, 0.35);
         background: linear-gradient(135deg, rgba(30, 33, 56, 0.9), rgba(25, 28, 48, 0.95));
@@ -635,7 +638,7 @@
         color: #e2e8f0;
       }
       .modal-dialog p { margin: 0; color: rgba(148,163,184,0.8); font-size: 13px; }
-      .modal-dialog input[type="email"] { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(100,116,139,0.35); background: rgba(15,23,42,0.5); color: #e2e8f0; font-size: 14px; }
+      .modal-dialog input[type="email"] { display:block; width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(100,116,139,0.35); background: rgba(15,23,42,0.5); color: #e2e8f0; font-size: 14px; }
       .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
       .modal-actions button { background: rgba(37,40,65,0.8); border: 1px solid rgba(100,116,139,0.35); color: rgba(226,232,240,0.92); padding: 8px 12px; font: inherit; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 8px; cursor: pointer; }
       .modal-actions button.primary { color: #0ea5e9; border-color: rgba(14,165,233,0.5); background: rgba(14,165,233,0.12); }

@@ -107,19 +107,19 @@ async function handleRate(req: IncomingMessage, res: ServerResponse) {
   }
 
   const result = await fetchFredLatestRate();
-  let payload: any;
-  if (result) {
-    const rounded = Math.round(result.adjusted * 10) / 10;
-    payload = {
-      ratePercent: rounded,
-      rawPercent: result.raw,
-      adjustedAdded: 0.5,
-      observationDate: result.observationDate,
-      source: result.source,
-    };
-  } else {
-    payload = { ratePercent: 5.5, rawPercent: null, adjustedAdded: 0.5, observationDate: null, source: "fallback" };
+  if (!result) {
+    res.setHeader("Cache-Control", "no-store");
+    res.writeHead(503).end(JSON.stringify({ error: "FRED unavailable" }));
+    return;
   }
+  const rounded = Math.round(result.adjusted * 10) / 10;
+  const payload: any = {
+    ratePercent: rounded,
+    rawPercent: result.raw,
+    adjustedAdded: 0.5,
+    observationDate: result.observationDate,
+    source: result.source,
+  };
   fredRateCache = { ts: now, payload };
   res.setHeader("Cache-Control", "public, max-age=3600");
   res.writeHead(200).end(JSON.stringify(payload));
@@ -1300,13 +1300,14 @@ const httpServer = createServer(
                 displayRate = Math.round((latest.adjusted) * 10) / 10;
               }
             }
-            if (displayRate == null) displayRate = 5.5;
-            const rateText = `${displayRate}%`;
-            // Replace the initial hardcoded 5% without changing structure/widths
-            html = html.replace(
-              /(<span\s+class=\"rate-num\">)([^<]*?)(<\/span>)/,
-              (_m, p1, _p2, p3) => `${p1}${rateText}${p3}`
-            );
+            // Only inject if we have a valid live rate. Otherwise leave blank.
+            if (displayRate != null && Number.isFinite(displayRate)) {
+              const rateText = `${displayRate}%`;
+              html = html.replace(
+                /(<span\s+class=\"rate-num\">)([^<]*?)(<\/span>)/,
+                (_m: any, p1: string, _p2: string, p3: string) => `${p1}${rateText}${p3}`
+              );
+            }
             res.end(html);
             return;
           } catch (e) {

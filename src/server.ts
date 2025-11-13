@@ -230,6 +230,95 @@ function classifyDevice(userAgent?: string | null): string {
   return "Other";
 }
 
+function computeSummary(args: any) {
+  const hv = typeof args.home_value === "number" && args.home_value > 0 ? args.home_value : null;
+  const dpv = typeof args.down_payment_value === "number" && args.down_payment_value >= 0 ? args.down_payment_value : 0;
+  const principal = hv != null ? Math.max(0, hv - dpv) : null;
+  const apr = typeof args.rate_apr === "number" && args.rate_apr > 0 ? args.rate_apr : null;
+  const years = typeof args.term_years === "number" && args.term_years > 0 ? args.term_years : null;
+  if (principal == null || apr == null || years == null) {
+    return {
+      loan_amount: principal,
+      monthly_payment_pi: null,
+      months_to_payoff: null,
+      payoff_date: null,
+      lifetime_interest: null,
+      pmi_end_month_index: null,
+      biweekly: null,
+    };
+  }
+  const n = Math.round(years * 12);
+  const r = (apr / 100) / 12;
+  let m = 0;
+  if (r === 0) {
+    m = principal / n;
+  } else {
+    const f = Math.pow(1 + r, n);
+    m = principal * r * f / (f - 1);
+  }
+  const totalPaid = m * n;
+  const totalInterest = totalPaid - principal;
+  let startMonth = args.start_month && args.start_month >= 1 && args.start_month <= 12 ? args.start_month : null;
+  let startYear = typeof args.start_year === "number" && args.start_year > 1900 ? args.start_year : null;
+  const now = new Date();
+  if (!startMonth || !startYear) {
+    startMonth = now.getMonth() + 1;
+    startYear = now.getFullYear();
+  }
+  const payoff = new Date(startYear, (startMonth - 1) + n, 1);
+  const payoffDate = `${payoff.getFullYear()}-${String(payoff.getMonth() + 1).padStart(2, "0")}`;
+  let pmiEndIndex: number | null = null;
+  const pmiThreshold = hv * 0.8;
+  if (principal > 0) {
+    let bal = principal;
+    for (let i = 1; i <= n; i++) {
+      const interestPortion = r === 0 ? 0 : bal * r;
+      const principalPortion = Math.min(bal, m - interestPortion);
+      bal = Math.max(0, bal - principalPortion);
+      const ltvAmount = bal;
+      if (pmiEndIndex === null && ltvAmount <= pmiThreshold) {
+        pmiEndIndex = i;
+        break;
+      }
+    }
+  }
+  let biweekly: any = null;
+  try {
+    const periodsPerYear = 26;
+    const i = (apr / 100) / periodsPerYear;
+    const paymentBiweekly = m / 2;
+    let nbi = null as null | number;
+    if (i === 0) {
+      nbi = principal / paymentBiweekly;
+    } else {
+      const denom = paymentBiweekly - principal * i;
+      if (denom > 0) {
+        nbi = Math.log(paymentBiweekly / denom) / Math.log(1 + i);
+      }
+    }
+    if (nbi && nbi > 0 && Number.isFinite(nbi)) {
+      const interestBi = paymentBiweekly * nbi - principal;
+      const monthsBi = nbi / periodsPerYear * 12;
+      const monthsSaved = Math.max(0, n - monthsBi);
+      biweekly = {
+        months_to_payoff: Math.round(monthsBi),
+        interest_paid: Math.max(0, interestBi),
+        savings_interest: Math.max(0, totalInterest - interestBi),
+        months_saved: Math.round(monthsSaved),
+      };
+    }
+  } catch {}
+  return {
+    loan_amount: Math.round(principal),
+    monthly_payment_pi: Math.round(m * 100) / 100,
+    months_to_payoff: n,
+    payoff_date: payoffDate,
+    lifetime_interest: Math.round(totalInterest * 100) / 100,
+    pmi_end_month_index: pmiEndIndex,
+    biweekly,
+  };
+}
+
 function readWidgetHtml(componentName: string): string {
   if (!fs.existsSync(ASSETS_DIR)) {
     throw new Error(
@@ -429,6 +518,30 @@ const tools: Tool[] = widgets.map((widget) => ({
       start_year: { type: "number" },
       extra_principal_monthly: { type: "number" },
       extra_start_month_index: { type: "number" },
+      summary: {
+        type: "object",
+        properties: {
+          loan_amount: { type: ["number", "null"] },
+          monthly_payment_pi: { type: ["number", "null"] },
+          months_to_payoff: { type: ["number", "null"] },
+          payoff_date: { type: ["string", "null"] },
+          lifetime_interest: { type: ["number", "null"] },
+          pmi_end_month_index: { type: ["number", "null"] },
+          biweekly: {
+            type: ["object", "null"],
+            properties: {
+              months_to_payoff: { type: ["number", "null"] },
+              interest_paid: { type: ["number", "null"] },
+              savings_interest: { type: ["number", "null"] },
+              months_saved: { type: ["number", "null"] },
+            },
+          },
+        },
+      },
+      suggested_followups: {
+        type: "array",
+        items: { type: "string" },
+      },
     },
   },
   title: widget.title,
@@ -598,15 +711,15 @@ function createMortgageCalculatorServer(): Server {
 
         // If ChatGPT didn't pass structured arguments, try to infer key numbers from freeform text in meta
         try {
+          const candidates: any[] = [
+            meta["openai/userPrompt"],
+            meta["openai/userText"],
+            meta["openai/lastUserMessage"],
+            meta["openai/inputText"],
+            meta["openai/requestText"],
+          ];
+          const userText = candidates.find((t) => typeof t === "string" && t.trim().length > 0) || "";
           if (args.home_value === undefined || args.home_value === null) {
-            const candidates: any[] = [
-              meta["openai/userPrompt"],
-              meta["openai/userText"],
-              meta["openai/lastUserMessage"],
-              meta["openai/inputText"],
-              meta["openai/requestText"],
-            ];
-            const userText = candidates.find((t) => typeof t === "string" && t.trim().length > 0) || "";
             if (userText) {
               const parseAmountToNumber = (s: string): number | null => {
                 const lower = s.toLowerCase().replace(/[,$\s]/g, "").trim();
@@ -651,6 +764,47 @@ function createMortgageCalculatorServer(): Server {
                   if (keywordRe.test(windowText)) {
                     if (tryAssign(match[1])) { assigned = true; break; }
                   }
+                }
+              }
+            }
+          }
+          if ((args.term_years === undefined || args.term_years === null) && userText) {
+            const tm = userText.match(/\b(\d{1,2})\s*[- ]?(?:year|yr|y)\b/i) || userText.match(/\b(10|15|20|25|30)\s*[- ]?(?:fixed|mortgage)\b/i);
+            if (tm && tm[1]) {
+              const ty = parseInt(tm[1], 10);
+              if (ty >= 5 && ty <= 40) {
+                args.term_years = ty;
+              }
+            }
+          }
+          if ((args.rate_apr === undefined || args.rate_apr === null) && userText) {
+            const rm = userText.match(/\b(\d{1,2}(?:\.\d+)?)\s*%\b/i) || userText.match(/\b(?:rate|apr|at)\s*(\d{1,2}(?:\.\d+)?)\b/i);
+            if (rm && rm[1]) {
+              const rv = parseFloat(rm[1]);
+              if (rv > 0 && rv < 25) {
+                args.rate_apr = rv;
+              }
+            }
+          }
+          if ((args.zip_code === undefined || args.zip_code === null) && userText) {
+            const zm = userText.match(/\b(\d{5})\b/);
+            if (zm && zm[1]) {
+              args.zip_code = zm[1];
+            }
+          }
+          if ((args.down_payment_value === undefined || args.down_payment_value === null) && userText) {
+            let dpm = userText.match(/\$\s*([\d,.]+)\s*(?:down|dp)\b/i);
+            if (dpm && dpm[1]) {
+              const n = Number(dpm[1].replace(/[^0-9.]/g, ""));
+              if (Number.isFinite(n) && n >= 0) {
+                args.down_payment_value = Math.round(n);
+              }
+            } else {
+              const ppm = userText.match(/\b(\d{1,2}(?:\.\d+)?)\s*%\s*(?:down|dp|down\s*payment)\b/i) || userText.match(/\b(?:down|dp|down\s*payment)[^\d%]{0,20}(\d{1,2}(?:\.\d+)?)\s*%\b/i);
+              if (ppm && ppm[1] && typeof args.home_value === "number" && args.home_value > 0) {
+                const pct = parseFloat(ppm[1]);
+                if (pct >= 0 && pct <= 100) {
+                  args.down_payment_value = Math.round(args.home_value * (pct / 100));
                 }
               }
             }
@@ -721,6 +875,12 @@ function createMortgageCalculatorServer(): Server {
             start_year: args.start_year,
             extra_principal_monthly: args.extra_principal_monthly,
             extra_start_month_index: args.extra_start_month_index,
+            summary: computeSummary(args),
+            suggested_followups: [
+              "Help me reduce my monthly payment",
+              "Compare 15 vs 30 year for my inputs",
+              "What if property taxes are 1.2%?",
+            ],
           },
           _meta: widgetMetadata,
         };
@@ -786,6 +946,10 @@ function humanizeEventName(event: string): string {
     widget_filter_category_change: "Filter: Category Change",
     widget_user_feedback: "User Feedback",
     widget_test_event: "Test Event",
+    widget_followup_click: "Follow-up Click",
+    widget_toggle_biweekly: "Toggle Biweekly",
+    widget_slider_rate_change: "Rate Slider Change",
+    widget_slider_down_payment_change: "Down Payment Slider Change",
   };
   return eventMap[event] || event;
 }

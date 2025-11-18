@@ -178,17 +178,17 @@
       .grid {
         display: grid;
         gap: 14px;
-        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         touch-action: auto;
       }
 
       .grid.duo-columns {
-        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 16px 18px;
       }
 
       .grid.trio-columns {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         gap: 16px 18px;
       }
 
@@ -223,6 +223,9 @@
         gap: 12px;
         align-items: end;
         margin: 10px 0 6px;
+      }
+      @media (max-width: 640px) {
+        .loan-preset-block { grid-template-columns: 1fr; }
       }
       .preset-chips {
         display: flex;
@@ -311,6 +314,10 @@
       .result-split .split-col .label { margin-bottom: 4px; }
       .result-split .split-col .value { margin-top: 0; }
       .result-split .split-col .hint { margin-top: 4px; opacity: 0.8; }
+      @media (max-width: 720px) {
+        .result-split { flex-direction: column; gap: 18px; }
+        .result-split::before { display: none; }
+      }
       /* Align lone vacancy label with the two inline pairs in Income */
       [data-openai-component="income-details"] .grid.trio-columns > label.percent-field {
         align-self: start;
@@ -329,7 +336,7 @@
       /* Outputs slide layout */
       .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
       .two-col > * { min-width: 0; }
-      @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+      @media (max-width: 1024px) { .two-col { grid-template-columns: 1fr; } }
       .three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
       .three-col > * { min-width: 0; }
       @media (max-width: 1200px) { .three-col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -364,11 +371,11 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 16px;
         width: 100%;
-        max-width: 1060px; /* align with KPI width */
+        max-width: 100%;
         margin: 0 auto;
         align-items: start;
       }
-      @media (max-width: 860px) { .year1-grid { grid-template-columns: 1fr; } }
+      @media (max-width: 1000px) { .year1-grid { grid-template-columns: 1fr; } }
       .donut-legend { display: grid; gap: 8px; font-size: 13px; color: rgba(226, 232, 240, 0.9); }
       .donut-legend .legend-item { display: flex; align-items: center; gap: 10px; padding: 4px 0; cursor: default; }
       .donut-legend .legend-item .swatch { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.06) inset; flex: 0 0 auto; }
@@ -379,6 +386,10 @@
       .yearly-table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; max-width: 100%; white-space: nowrap; background: rgba(23, 26, 45, 0.6); border-radius: 12px; }
       .yearly-table th, .yearly-table td { padding: 10px 12px; border-bottom: 1px solid rgba(71, 85, 105, 0.35); font-size: 13px; text-align: right; }
       .yearly-table thead th:first-child, .yearly-table tbody td:first-child { text-align: left; }
+      @media (max-width: 720px) {
+        .metrics-table th, .metrics-table td { font-size: 12px; padding: 8px 10px; }
+        .kpi-number { font-size: 26px; }
+      }
 
       .is-hidden {
         display: none !important;

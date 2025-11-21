@@ -2463,7 +2463,6 @@
 
         const autoDefaults = {
           auto_price: 50000,
-          down_payment_value: 5000,
           interest_rate_pct: null,
           loan_term_months: 60,
           cash_incentives: 0,
@@ -2491,7 +2490,39 @@
               el.value = String(val ?? '');
             }
           };
-          Object.entries(autoDefaults).forEach(([k,v]) => setIfEmpty(k, v));
+          // Down payment default: 10% of auto price when value is empty, zero, non-numeric, or exceeds price
+          try {
+            const priceEl = document.getElementById('auto_price');
+            const dpEl = document.getElementById('down_payment_value');
+            let basePrice = autoDefaults.auto_price;
+            if (priceEl) {
+              const parsed = Number(priceEl.value || '');
+              if (Number.isFinite(parsed) && parsed > 0) basePrice = parsed;
+            }
+            const dpDefault = Math.round(basePrice * 0.10);
+            if (dpEl) {
+              const curStr = String(dpEl.value || '').trim();
+              const curNum = Number(curStr || '0');
+              const invalid = !Number.isFinite(curNum) || curNum <= 0 || (basePrice > 0 && curNum > basePrice);
+              if (force || invalid) {
+                dpEl.value = String(dpDefault);
+              }
+            } else {
+              setIfEmpty('down_payment_value', dpDefault);
+            }
+          } catch (_) {}
+          Object.entries(autoDefaults).forEach(([k,v]) => {
+            if (k === 'down_payment_value') return;
+            setIfEmpty(k, v);
+          });
+          const dpEl = document.getElementById('down_payment_value');
+          if (dpEl) {
+            try {
+              dpEl.dispatchEvent(new Event('input', { bubbles: true }));
+            } catch (_) {
+              try { dpEl.dispatchEvent(new Event('input')); } catch (_) {}
+            }
+          }
         };
 
         // State -> baseline statewide general sales tax (%) (source: Tax Foundation 2024)
@@ -2514,7 +2545,7 @@
             const curNum = Number(taxEl.value);
             const hasMeaningful = taxEl.value !== '' && Number.isFinite(curNum) && curNum > 0;
             // Only set when forcing or when the field is empty/zero and user hasn't manually edited it
-            if (force || (!hasMeaningful && !autoSalesTaxEdited)) {
+            if (force || !autoSalesTaxEdited) {
               taxEl.value = String(STATE_SALES_TAX[code]);
             }
           } catch (_) { /* ignore */ }
@@ -3944,7 +3975,8 @@
         const stateEl = document.getElementById('state');
         if (stateEl) {
           stateEl.addEventListener('change', () => {
-            setSalesTaxFromState(false);
+            // Force state change to always refresh baseline tax for that state
+            setSalesTaxFromState(true);
             calculateAndRender();
             saveUserInputsState();
           });

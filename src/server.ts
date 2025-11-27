@@ -326,6 +326,7 @@ function widgetMeta(widget: BmiHealthWidget, bustCache: boolean = false) {
       "Ideal Weight",
       "Body Fat Calculator",
       "Calorie Calculator",
+      "BMI Calculator",
       "Am I overweight?",
     ],
     "openai/widgetPrefersBorder": true,
@@ -775,6 +776,7 @@ function createBmiHealthCalculatorServer(): Server {
         return {
           structuredContent: structured,
           _meta: metaForReturn,
+          content: [],
         };
       } catch (error: any) {
         logAnalytics("tool_call_error", {

@@ -78,7 +78,7 @@ ANALYTICS_PASSWORD=your_password
 - **How we use it:** These fields feed the `/analytics` dashboard and error alerts only; we do not sell or share this data with third parties.
 - **Retention:** Logs are stored for **30 days** in the `/logs` folder on the server and then automatically rotated.
 - **User input storage:** The widget caches your in-progress form values in `localStorage` so they persist across refreshes; entries automatically expire after **30 days**. Clear them anytime with the “Reset defaults” button.
-- **Deletion / questions:** Email **support@retirement-calculator.onrender.com** (or open a GitHub issue) with the timestamp (UTC) of your ChatGPT session and we will delete the associated log entry within 7 days.
+- **Deletion / questions:** Email **support@layer3labs.io** (or open a GitHub issue) with the timestamp (UTC) of your ChatGPT session and we will delete the associated log entry within 7 days.
 
 ## Monitoring & Alerts
 

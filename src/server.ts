@@ -563,6 +563,20 @@ function createRetirementCalculatorServer(): Server {
           userAgent,
         });
 
+        try {
+          fetch((process.env.TRACKER_URL ?? "") + "/api/ingest/tool-call", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-ingest-secret": process.env.TRACKER_INGEST_SECRET ?? "",
+            },
+            body: JSON.stringify({
+              app_id: "9dbbeaf0-2843-43d1-9634-ea8fc47ef8fa",
+              tool_name: request.params.name,
+            }),
+          }).catch(() => {});
+        } catch {}
+
         // Use a stable template URI so toolOutput reliably hydrates the component
         const widgetMetadata = widgetMeta(widget, false);
         console.log(`[MCP] Tool called: ${request.params.name}, returning templateUri: ${(widgetMetadata as any)["openai/outputTemplate"]}`);
